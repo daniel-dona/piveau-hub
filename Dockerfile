@@ -1,4 +1,14 @@
-FROM openjdk:11-jre
+FROM maven:3-openjdk-11 AS base
+
+FROM base AS build
+
+COPY src /build/src
+COPY pom.xml /build/pom.xml
+WORKDIR /build
+RUN mvn package
+
+FROM openjdk:11 AS deploy
+COPY --from=build /build/target/hub-repo.jar /usr/verticles/hub-repo.jar
 
 ENV VERTICLE_FILE hub-repo.jar
 # Set the location of the verticles
@@ -16,8 +26,8 @@ EXPOSE 5000
 RUN addgroup --system vertx && adduser --system --group vertx
 
 # Copy your fat jar to the container
-COPY target/$VERTICLE_FILE $VERTICLE_HOME/
-COPY conf/config.json $VERTICLE_HOME/conf/
+#COPY target/$VERTICLE_FILE $VERTICLE_HOME/
+COPY conf/config.json $VERTICLE_HOME/conf/config.json
 COPY misc/ $VERTICLE_HOME/misc/
 
 RUN chown -R vertx $VERTICLE_HOME
